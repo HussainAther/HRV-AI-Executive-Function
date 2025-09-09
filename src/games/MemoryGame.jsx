@@ -7,14 +7,14 @@ const ALL_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ".split("");
 export default function MemoryGame({ executiveFunctionScore = 0.5 }) {
   const [sequence, setSequence] = useState([]);
   const [currentLetter, setCurrentLetter] = useState("");
-  const [userInput, setUserInput] = useState("");
-  const [score, setScore] = useState(0);
   const [index, setIndex] = useState(0);
-  const [nBack, setNBack] = useState(2); // adaptive
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+  const [nBack, setNBack] = useState(2);
 
-  // 🧠 Adjust game difficulty based on EF score
   useEffect(() => {
-    const newNBack = Math.max(1, Math.round(2 + executiveFunctionScore * 3)); // Range: 2-5
+    const newNBack = Math.max(1, Math.round(2 + executiveFunctionScore * 3));
     setNBack(newNBack);
   }, [executiveFunctionScore]);
 
@@ -25,14 +25,25 @@ export default function MemoryGame({ executiveFunctionScore = 0.5 }) {
     setSequence(newSeq);
     setIndex(0);
     setScore(0);
+    setStreak(0);
+    setMaxStreak(0);
   };
 
   const handleInput = (match) => {
     if (index < nBack) return;
+
     const isMatch = sequence[index] === sequence[index - nBack];
     if ((match && isMatch) || (!match && !isMatch)) {
       setScore((s) => s + 1);
+      setStreak((s) => {
+        const newStreak = s + 1;
+        if (newStreak > maxStreak) setMaxStreak(newStreak);
+        return newStreak;
+      });
+    } else {
+      setStreak(0); // reset streak on error
     }
+
     setIndex((i) => i + 1);
   };
 
@@ -47,8 +58,10 @@ export default function MemoryGame({ executiveFunctionScore = 0.5 }) {
       <CardContent className="p-6 space-y-4 text-center">
         <h2 className="text-xl font-bold">🧠 Adaptive N-Back Game</h2>
         <p className="text-sm text-muted-foreground">
-          Current N-Back Level: {nBack}
+          N-Back Level: {nBack}
         </p>
+        <p>🔥 Current Streak: {streak} | 🏆 Max Streak: {maxStreak}</p>
+
         {sequence.length === 0 ? (
           <Button onClick={() => generateSequence()}>Start Game</Button>
         ) : index >= sequence.length ? (
