@@ -12,6 +12,15 @@ app = FastAPI()
 MODEL_PATH = "../models/hrv_ai_model.h5"
 model = tf.keras.models.load_model(MODEL_PATH)
 
+STREAK_LOG_PATH = "streak_log.json"
+
+class StreakEntry(BaseModel):
+    streak: int
+    max_streak: int
+    timestamp: datetime
+    session_id: str = "default"
+
+
 class HRVInput(BaseModel):
     HRV_RMSSD: float
     HRV_SDNN: float
@@ -46,6 +55,20 @@ async def websocket_endpoint(websocket):
         response = {"message": "Live HRV data received", "data": data}
         await websocket.send_json(response)
         await asyncio.sleep(1)
+
+@app.post("/log-streak")
+def log_streak(entry: StreakEntry):
+    log = []
+    if os.path.exists(STREAK_LOG_PATH):
+        with open(STREAK_LOG_PATH, "r") as f:
+            log = json.load(f)
+
+    log.append(entry.dict())
+
+    with open(STREAK_LOG_PATH, "w") as f:
+        json.dump(log, f, indent=2)
+
+    return {"status": "ok", "entry_logged": entry}
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
