@@ -1,86 +1,113 @@
-import React, { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
-const ALL_LETTERS = "ABCDEFGHJKLMNPQRSTUVWXYZ".split("");
+const patterns = [
+  ["🟥", "🟦", "🟩"],
+  ["🟦", "🟩", "🟨"],
+  ["🟨", "🟪", "🟥"],
+  ["🟩", "🟥", "🟪", "🟦"],
+  ["🟥", "🟦", "🟨", "🟪", "🟩"],
+];
 
-export default function MemoryGame({ executiveFunctionScore = 0.5 }) {
+export default function MemoryGame() {
   const [sequence, setSequence] = useState([]);
-  const [currentLetter, setCurrentLetter] = useState("");
   const [index, setIndex] = useState(0);
-  const [score, setScore] = useState(0);
+  const [input, setInput] = useState([]);
   const [streak, setStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
-  const [nBack, setNBack] = useState(2);
+  const [message, setMessage] = useState("");
+  const [adaptive, setAdaptive] = useState(true);
 
-  useEffect(() => {
-    const newNBack = Math.max(1, Math.round(2 + executiveFunctionScore * 3));
-    setNBack(newNBack);
-  }, [executiveFunctionScore]);
+  const logStreakServer = async (current, max) => {
+    const entry = {
+      streak: current,
+      max_streak: max,
+      timestamp: new Date().toISOString(),
+      session_id: "session_" + Date.now(),
+    };
 
-  const generateSequence = (length = 20) => {
-    const newSeq = Array.from({ length }, () => {
-      return ALL_LETTERS[Math.floor(Math.random() * ALL_LETTERS.length)];
+    await fetch("http://localhost:8000/log-streak", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(entry),
     });
+  };
+
+  const startNewGame = () => {
+    const newSeq = adaptive
+      ? [...Array(Math.min(streak + 3, 8)).keys()].map(() =>
+          ["🟥", "🟦", "🟩", "🟨", "🟪"][Math.floor(Math.random() * 5)]
+        )
+      : patterns[Math.floor(Math.random() * patterns.length)];
+
     setSequence(newSeq);
     setIndex(0);
-    setScore(0);
-    setStreak(0);
-    setMaxStreak(0);
+    setInput([]);
+    setMessage("Remember this pattern:");
+    setTimeout(() => setMessage("Repeat it:"), 2000);
   };
 
-  const handleInput = (match) => {
-    if (index < nBack) return;
+  const handleInput = (color) => {
+    const newInput = [...input, color];
+    setInput(newInput);
 
-    const isMatch = sequence[index] === sequence[index - nBack];
-    if ((match && isMatch) || (!match && !isMatch)) {
-      setScore((s) => s + 1);
-      setStreak((s) => {
-        const newStreak = s + 1;
-        if (newStreak > maxStreak) setMaxStreak(newStreak);
-        return newStreak;
-      });
-    } else {
-      setStreak(0); // reset streak on error
+    if (color !== sequence[newInput.length - 1]) {
+      setMessage("❌ Incorrect! Game over.");
+      logStreakServer(streak, maxStreak);
+      setStreak(0);
+      return;
     }
 
-    setIndex((i) => i + 1);
+    if (newInput.length === sequence.length) {
+      const newStreak = streak + 1;
+      setStreak(newStreak);
+      if (newStreak > maxStreak) setMaxStreak(newStreak);
+      logStreakServer(newStreak, Math.max(newStreak, maxStreak));
+      setMessage("✅ Correct! Next round...");
+      setTimeout(startNewGame, 1000);
+    }
   };
 
   useEffect(() => {
-    if (sequence.length > 0 && index < sequence.length) {
-      setCurrentLetter(sequence[index]);
-    }
-  }, [index, sequence]);
+    startNewGame();
+  }, []);
 
   return (
-    <Card>
-      <CardContent className="p-6 space-y-4 text-center">
-        <h2 className="text-xl font-bold">🧠 Adaptive N-Back Game</h2>
-        <p className="text-sm text-muted-foreground">
-          N-Back Level: {nBack}
-        </p>
-        <p>🔥 Current Streak: {streak} | 🏆 Max Streak: {maxStreak}</p>
+    <div className="p-4 max-w-xl mx-auto space-y-4">
+      <h2 className="text-2xl font-bold">🧠 Memory Challenge</h2>
 
-        {sequence.length === 0 ? (
-          <Button onClick={() => generateSequence()}>Start Game</Button>
-        ) : index >= sequence.length ? (
-          <>
-            <p>✅ Game Over</p>
-            <p>Final Score: {score} / {sequence.length - nBack}</p>
-            <Button onClick={() => generateSequence()}>Play Again</Button>
-          </>
-        ) : (
-          <>
-            <div className="text-4xl font-bold">{currentLetter}</div>
-            <div className="flex justify-center gap-4 mt-4">
-              <Button onClick={() => handleInput(true)}>Match</Button>
-              <Button onClick={() => handleInput(false)}>No Match</Button>
-            </div>
-          </>
+      <p className="text-md">Streak: {streak} | Max Streak: {maxStreak}</p>
+
+      <div className="space-x-2 mb-2">
+        <Button onClick={startNewGame}>🔄 New Game</Button>
+        <Button onClick={() => setAdaptive((a) => !a)}>
+          {adaptive ? "🧩 Adaptive: On" : "🧩 Adaptive: Off"}
+        </Button>
+      </div>
+
+      <div className="border p-4 rounded-md bg-gray-100 min-h-[80px]">
+        <p className="text-lg font-semibold">{message}</p>
+        {message.startsWith("Remember") && (
+          <div className="mt-2 flex space-x-2 text-2xl">
+            {sequence.map((s, i) => (
+              <span key={i}>{s}</span>
+            ))}
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+
+      <div className="mt-4 flex space-x-2">
+        {["🟥", "🟦", "🟩", "🟨", "🟪"].map((color) => (
+          <Button
+            key={color}
+            onClick={() => handleInput(color)}
+            className="text-xl"
+          >
+            {color}
+          </Button>
+        ))}
+      </div>
+    </div>
   );
 }
 
