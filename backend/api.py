@@ -1,12 +1,40 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from pydantic import BaseModel
 import uvicorn
 import asyncio
+import csv
+import io
 
 app = FastAPI()
+
+LEADERBOARD_FILE = "data/reaction_leaderboard.csv"
+
+class ReactionEntry(BaseModel):
+    name: str
+    reaction_time_ms: int
+
+@app.post("/log-reaction")
+async def log_reaction(entry: ReactionEntry):
+    os.makedirs("data", exist_ok=True)
+    with open(LEADERBOARD_FILE, "a") as f:
+        writer = csv.writer(f)
+        writer.writerow([entry.name, entry.reaction_time_ms])
+    return {"status": "logged"}
+
+@app.get("/leaderboard")
+async def get_leaderboard():
+    if not os.path.exists(LEADERBOARD_FILE):
+        return []
+
+    with open(LEADERBOARD_FILE, "r") as f:
+        rows = list(csv.reader(f))
+        rows = sorted(rows, key=lambda x: int(x[1]))
+        top_10 = [{"name": row[0], "reaction_time_ms": int(row[1])} for row in rows[:10]]
+    return top_10
+
 
 # Load pre-trained HRV model
 MODEL_PATH = "../models/hrv_ai_model.h5"
