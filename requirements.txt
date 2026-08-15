@@ -1,0 +1,29 @@
+# requirements.txt
+
+# --- Core Dependencies ---
+tensorflow>=2.11
+scikit-learn
+p
+pandas
+matplotlib
+fastapi
+uvicorn
+python-dotenv
+
+# --- Optional Enhancements ---
+websockets
+requests
+jupyter
+
+# To install: pip install -r requirements.txt
+
+# .env (example)
+MODEL_PATH=./models/hrv_lstm_model.h5
+LOG_PATH=./data/prediction_log.json
+
+# Note: Load .env in your code using dotenv
+# Example (in Python):
+# from dotenv import load_dotenv
+# load_dotenv()
+# model_path = os.getenv("MODEL_PATH")
+

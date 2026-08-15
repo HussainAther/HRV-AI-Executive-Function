@@ -50,3 +50,89 @@ This study highlights the potential of HRV-based AI for executive function monit
 *To be compiled based on cited studies and related work.*
 
 
+## 🚀 Features
+- Real-time HRV data ingestion (via wearables or upload)
+- LSTM-based AI model to predict executive function state
+- React frontend dashboard with HRV scores and adaptive interventions
+- Live cognitive feedback (e.g., breathing prompts, focus cues)
+- Prediction logging and session history
+
+---
+
+## 📂 Project Structure
+```bash
+├── backend/               # FastAPI backend
+├── frontend/              # React dashboard
+├── models/                # Trained LSTM model
+├── notebooks/             # Evaluation and experimentation scripts
+├── src/                   # Feature engineering and AI logic
+├── data/                  # Raw and processed HRV data
+├── docs/                  # Diagrams and documentation
+├── paper/                 # arXiv manuscript (LaTeX)
+```
+
+---
+
+## 🔧 Setup
+```bash
+# Clone the repo
+$ git clone https://github.com/your-org/hrv-ai-executive-function.git
+$ cd hrv-ai-executive-function
+
+# Create virtual environment (recommended)
+$ python -m venv venv && source venv/bin/activate
+
+# Install dependencies
+$ pip install -r requirements.txt
+
+# Run the backend
+$ cd backend
+$ uvicorn api:app --reload
+
+# Run the frontend
+$ cd frontend
+$ npm install && npm run dev
+```
+
+---
+
+## 📊 Example API Call
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"HRV_RMSSD": 42.5, "HRV_SDNN": 35.2, "HRV_LF_HF": 1.1}'
+```
+
+---
+
+## 📈 Goals
+- Bridge wearable biometrics (HRV) with real-time cognition tracking
+- Empower users with personalized feedback to manage cognitive load
+- Open-source toolkit for researchers and developers
+
+---
+
+## 🤝 Contributing
+- Open an issue or feature request
+- Create a feature branch
+- Submit a pull request with a clear title and description
+
+---
+
+## 📜 License
+MIT License
+
+---
+
+## ✍️ Authors
+Created by [Your Name] and contributors. Research-driven. Open-source inspired.
+
+---
+
+## 📚 Citation (Coming Soon)
+Preprint available on [arXiv](https://arxiv.org/) — stay tuned.
+
+---
+
+For questions, collaborations, or demos, contact [shussainather@gmail.com]
+
